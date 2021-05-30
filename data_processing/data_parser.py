@@ -25,7 +25,7 @@ DATA_GC_URI_TEST = {
 
 
 class DataWriter():
-    def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512，depth = 3):
+    def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512, depth = 3):
         self.src_path = src_path
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
