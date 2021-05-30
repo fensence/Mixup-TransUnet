@@ -132,7 +132,7 @@ class DataWriter():
             testdataset.append(
                 {'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
         return testdataset
-    
+"""    
 class DataWriter2():
     def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512, depth = 3):
         self.src_path = src_path
@@ -148,7 +148,7 @@ class DataWriter2():
 
     @staticmethod
     def _bytes_feature(value):
-        """Returns a bytes_list from a string / byte."""
+        """"""Returns a bytes_list from a string / byte.""""""
         if isinstance(value, type(tf.constant(0))):  # if value ist tensor
             value = value.numpy()  # get value of tensor
         return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
@@ -243,7 +243,7 @@ class DataWriter2():
             testdataset.append(
                 {'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
         return testdataset
-
+"""
 
 class DataReader():
 
