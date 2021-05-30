@@ -1,0 +1,2 @@
+synapse_ct_scans/case0022.tfrecords filter=lfs diff=lfs merge=lfs -text
+synapse_ct_scans/*.tfrecords filter=lfs diff=lfs merge=lfs -text
