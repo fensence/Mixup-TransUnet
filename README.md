@@ -1,6 +1,6 @@
 # TransUNet
 
-This repo reproduces the results of  [TransUNet: Transformers Make Strong Encoders for Medical Image Segmentation](https://arxiv.org/pdf/2102.04306.pdf) as a final project for the course Deep Learning in Data Science DD2424 @ KTH (Royal Institute of Technology)
+This repo reproduces the code of the research track for COMP5329 Deep Learning Course.
 
 A demo of TransUnet is available in [this colab notebook](https://colab.research.google.com/github/KenzaB27/TransUnet/blob/main/TransUNet_demo.ipynb#scrollTo=QwBIRuD4tAfc).
 
