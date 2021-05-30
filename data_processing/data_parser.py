@@ -23,8 +23,117 @@ DATA_GC_URI_TEST = {
     224: 'gs://aga_bucket/synapse-test-224/',
 }
 
-
 class DataWriter():
+    def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512):
+        self.src_path = src_path
+        self.dest_path = dest_path
+        self.filenames = [f for f in listdir(
+            src_path) if isfile(join(src_path, f))]
+        np.random.shuffle(self.filenames)
+        self.batch_size = batch_size
+        self.n_samples = len(self.filenames)
+        self.height = height
+        self.width = width
+
+    @staticmethod
+    def _bytes_feature(value):
+        """Returns a bytes_list from a string / byte."""
+        if isinstance(value, type(tf.constant(0))):  # if value ist tensor
+            value = value.numpy()  # get value of tensor
+        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+    @staticmethod
+    def serialize_array(array):
+        array = tf.io.serialize_tensor(array)
+        return array
+
+    def parse_single_image(self, image, label):
+        # define the dictionary -- the structure -- of our single example
+        data = {
+            'image': self._bytes_feature(self.serialize_array(image)),
+            'label': self._bytes_feature(self.serialize_array(label))
+        }
+        # create an Example, wrapping the single features
+        out = tf.train.Example(features=tf.train.Features(feature=data))
+        return out
+
+    def write_image_to_tfr(self, image, label, filename):
+        filename = filename+"tfrecords"
+        # create a writer that'll store our data to disk
+        writer = tf.io.TFRecordWriter(filename)
+
+        image = np.stack([image, image, image], axis=-1)
+        out = self.parse_single_image(image=image, label=label)
+        writer.write(out.SerializeToString())
+
+        writer.close()
+        print(f"Wrote {filename} elements to TFRecord")
+
+    def write_tfrecords(self):
+        for file in tqdm(self.filenames):
+            data = np.load(self.src_path + file)
+            image, label = data['image'], data['label']
+            filename = self.dest_path + file[:-3]
+            self.write_image_to_tfr(image, label, filename)
+
+    def process_data(self, image, label):
+
+        image = np.stack([image, image, image], axis=-1)
+        w, h, c = image.shape
+        if w != self.width or h != self.height:
+            image = zoom(
+                image, (self.width / w, self.height / h, 1), order=3)
+            label = zoom(label, (self.width /
+                                 w, self.height / h), order=0)
+        return image, label
+
+    def write_batch_tfrecords(self):
+        n_batches = self.n_samples // self.batch_size
+        for i in tqdm(range(n_batches+1)):
+            filename = self.dest_path + f'record_{i}.tfrecords'
+            writer = tf.io.TFRecordWriter(filename)
+            start, end = self.batch_size*i, self.batch_size * \
+                (i+1) if self.batch_size * \
+                (i+1) < self.n_samples else self.n_samples
+            for file in self.filenames[start: end]:
+                data = np.load(self.src_path + file)
+                image, label = self.process_data(data['image'], data['label'])
+                out = self.parse_single_image(image=image, label=label)
+                writer.write(out.SerializeToString())
+            writer.close()
+            print(f"Wrote batch {i} to TFRecord")
+
+    def write_test_tfrecords(self):
+        for filename in tqdm(self.filenames):
+            data = h5py.File(self.src_path + filename, mode='r')
+            image3d, label3d = data['image'][:].astype(
+                'float32'), data['label'][:].astype('float32')
+            writer = tf.io.TFRecordWriter(
+                self.dest_path + filename[:-7] + '.tfrecords')
+            for image, label in zip(image3d, label3d):
+                image, label = self.process_data(image, label)
+                out = self.parse_single_image(image=image, label=label)
+                writer.write(out.SerializeToString())
+            writer.close()
+            print(f"Wrote {filename} to TFRecord")
+
+    def write_test_list(self):
+        testdataset = []
+        for filename in tqdm(self.filenames):
+            data = h5py.File(self.src_path + filename, mode='r')
+            image3d, label3d = data['image'][:].astype(
+                'float32'), data['label'][:].astype('float32')
+            image3d_processed, label3d_processed = [], []
+            for image, label in zip(image3d, label3d):
+                image, label = self.process_data(image, label)
+                label = tf.one_hot(label, depth=N_CLASSES).numpy()
+                image3d_processed.append(image)
+                label3d_processed.append(label)
+            testdataset.append(
+                {'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
+        return testdataset
+    
+class DataWriter2():
     def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512, depth = 3):
         self.src_path = src_path
         self.dest_path = dest_path
